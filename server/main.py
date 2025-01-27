@@ -1,11 +1,13 @@
+import base64
 import json
 import os
 import uuid
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 import openai
 import uvicorn
+from docusign_esign import ApiClient, EnvelopeDefinition, EnvelopesApi
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from google.cloud import storage
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -18,6 +20,62 @@ app = FastAPI(title="NGO Platform API")
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 GCS_BUCKET = os.getenv("GCS_BUCKET", "ngo-templates")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# DocuSign Configuration
+DOCUSIGN_ACCOUNT_ID = os.getenv("DOCUSIGN_ACCOUNT_ID")
+DOCUSIGN_INTEGRATION_KEY = os.getenv("DOCUSIGN_INTEGRATION_KEY")
+DOCUSIGN_USER_ID = os.getenv("DOCUSIGN_USER_ID")
+DOCUSIGN_PRIVATE_KEY = os.getenv("DOCUSIGN_PRIVATE_KEY")
+DOCUSIGN_BASE_PATH = "https://demo.docusign.net/restapi"
+
+
+# DocuSign Helper Functions
+async def get_docusign_auth_token() -> str:
+    api_client = ApiClient()
+    api_client.set_base_path(DOCUSIGN_BASE_PATH)
+
+    # JWT Grant authentication
+    private_key_bytes = base64.b64decode(DOCUSIGN_PRIVATE_KEY)
+    api_client.configure_jwt_authorization_flow(
+        private_key_bytes,
+        DOCUSIGN_INTEGRATION_KEY,
+        DOCUSIGN_USER_ID,
+        DOCUSIGN_ACCOUNT_ID,
+        3600,
+    )
+    return api_client
+
+
+async def send_envelope_for_signature(
+    template_id: str, signer_email: str, signer_name: str, custom_fields: Dict
+) -> str:
+    api_client = await get_docusign_auth_token()
+    envelope_api = EnvelopesApi(api_client)
+
+    # Create envelope definition
+    envelope_definition = EnvelopeDefinition(
+        status="sent",
+        template_id=template_id,
+        template_roles=[
+            {
+                "email": signer_email,
+                "name": signer_name,
+                "role_name": "signer",
+                "tabs": {
+                    "text_tabs": [
+                        {"tab_label": key, "value": str(value)}
+                        for key, value in custom_fields.items()
+                    ]
+                },
+            }
+        ],
+    )
+
+    # Send envelope
+    results = envelope_api.create_envelope(
+        account_id=DOCUSIGN_ACCOUNT_ID, envelope_definition=envelope_definition
+    )
+    return results.envelope_id
+
 
 # Initialize clients
 mongo_client = AsyncIOMotorClient(MONGODB_URL)
@@ -175,9 +233,21 @@ async def process_donor(
     if submission.ngo_id != str(ngo["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this NGO")
 
-    # Generate personalized email using NGO's donor template
+    # Generate personalized email
     email_content = await generate_personalized_email(
         "donation_acknowledgment", submission.donation_details
+    )
+
+    # Send agreement via DocuSign
+    envelope_id = await send_envelope_for_signature(
+        template_id=ngo["templates"]["donor"]["docusign_template_id"],
+        signer_email=submission.donation_details["email"],
+        signer_name=submission.donation_details["name"],
+        custom_fields={
+            "donationAmount": submission.donation_details["amount"],
+            "donationPurpose": submission.donation_details["purpose"],
+            "ngoName": ngo["name"],
+        },
     )
 
     # Store donor submission
@@ -185,63 +255,61 @@ async def process_donor(
         "ngo_id": submission.ngo_id,
         "donation_details": submission.donation_details,
         "email_content": email_content,
+        "docusign_envelope_id": envelope_id,
         "created_at": datetime.utcnow(),
-        "status": "processed",
+        "status": "agreement_sent",
     }
 
     await db.donors.insert_one(donor_doc)
 
-    return {"status": "Donor submission processed successfully"}
+    return {"status": "Donor agreement sent successfully", "envelope_id": envelope_id}
 
 
 @app.post("/recipient")
 async def process_recipient(
     ngo_id: str = Form(...),
-    assistance_request: str = Form(...),  # JSON string of request details
+    assistance_request: str = Form(...),
     supporting_document: UploadFile = File(...),
     ngo: dict = Depends(verify_api_key),
 ):
     if ngo_id != str(ngo["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this NGO")
 
-    # Read and upload supporting document
-    document_content = await supporting_document.read()
-    document_url = await upload_to_gcs(
-        document_content, f"{ngo_id}/documents/{supporting_document.filename}"
-    )
-
-    # Convert assistance_request from string to dict
     request_data = json.loads(assistance_request)
 
-    # Convert document to text for analysis (you might need a PDF/Doc parser here)
-    # For now, assuming it's a text file
+    # Analyze documents with AI
+    document_content = await supporting_document.read()
     document_text = document_content.decode("utf-8")
-
-    # Analyze supporting document with AI
     analysis = await analyze_documents_with_ai([document_text])
 
-    # Generate personalized email using NGO's recipient template
-    email_content = await generate_personalized_email(
-        "assistance_response", {**request_data, "analysis": analysis}
+    # Send agreement via DocuSign with priority information
+    envelope_id = await send_envelope_for_signature(
+        template_id=ngo["templates"]["recipient"]["docusign_template_id"],
+        signer_email=request_data["email"],
+        signer_name=request_data["name"],
+        custom_fields={
+            "assistanceType": request_data["assistance_type"],
+            "priority": analysis["severity"],
+            "ngoName": ngo["name"],
+        },
     )
 
     # Store recipient submission
     recipient_doc = {
         "ngo_id": ngo_id,
         "assistance_request": request_data,
-        "supporting_document_url": document_url,
         "analysis": analysis,
-        "email_content": email_content,
+        "docusign_envelope_id": envelope_id,
         "created_at": datetime.utcnow(),
-        "status": "processed",
+        "status": "agreement_sent",
     }
 
     await db.recipients.insert_one(recipient_doc)
 
     return {
-        "status": "Recipient submission processed successfully",
+        "status": "Recipient agreement sent successfully",
         "severity": analysis["severity"],
-        "document_url": document_url,
+        "envelope_id": envelope_id,
     }
 
 
