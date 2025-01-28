@@ -5,27 +5,26 @@ import uuid
 from datetime import datetime
 from typing import Dict, List
 
-import openai
 import uvicorn
 from docusign_esign import ApiClient, EnvelopeDefinition, EnvelopesApi
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from google.cloud import storage
-from motor.motor_asyncio import AsyncIOMotorClient
+from openai import OpenAI
 from pydantic import BaseModel
 
 # Initialize FastAPI app
 app = FastAPI(title="NGO Platform API")
-
 # Configuration
-MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+MONGODB_URL = os.getenv("MONGODB_URL")
 GCS_BUCKET = os.getenv("GCS_BUCKET", "ngo-templates")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=OPENAI_API_KEY)
 # DocuSign Configuration
 DOCUSIGN_ACCOUNT_ID = os.getenv("DOCUSIGN_ACCOUNT_ID")
 DOCUSIGN_INTEGRATION_KEY = os.getenv("DOCUSIGN_INTEGRATION_KEY")
 DOCUSIGN_USER_ID = os.getenv("DOCUSIGN_USER_ID")
 DOCUSIGN_PRIVATE_KEY = os.getenv("DOCUSIGN_PRIVATE_KEY")
-DOCUSIGN_BASE_PATH = "https://demo.docusign.net/restapi"
+DOCUSIGN_BASE_PATH = os.getenv("DOCUSIGN_BASE_PATH", "https://demo.docusign.net")
 
 
 # DocuSign Helper Functions
@@ -82,7 +81,6 @@ mongo_client = AsyncIOMotorClient(MONGODB_URL)
 db = mongo_client.ngo_platform
 storage_client = storage.Client()
 bucket = storage_client.bucket(GCS_BUCKET)
-openai.api_key = OPENAI_API_KEY
 
 
 # Models
@@ -118,7 +116,7 @@ async def analyze_documents_with_ai(documents: List[str]) -> dict:
     # Combine documents into a single context
     doc_text = "\n".join(documents)
 
-    response = await openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {
@@ -139,10 +137,10 @@ async def analyze_documents_with_ai(documents: List[str]) -> dict:
 
 
 async def generate_personalized_email(template_type: str, data: dict) -> str:
-    prompt = f"Generate a personalized email for a {template_type} based on this information:\n{str(data)}"
+    prompt = f"Generate a personalized engaging email for a {template_type} based on this information:\n{str(data)}"
 
-    response = await openai.ChatCompletion.create(
-        model="gpt-4",
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=[
             {
                 "role": "system",
