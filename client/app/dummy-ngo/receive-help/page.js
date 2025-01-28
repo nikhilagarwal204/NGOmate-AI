@@ -47,7 +47,7 @@ const AssistanceRequestForm = () => {
                 formDataToSend.append(key, formData[key]);
             });
 
-            const response = await fetch('/api/assistance-request', {
+            const response = await fetch('/api/recpient', {
                 method: 'POST',
                 headers: {
                     'Authorization': 'Bearer abcdefghijk'

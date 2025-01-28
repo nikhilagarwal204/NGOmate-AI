@@ -72,7 +72,7 @@ const DonationForm = () => {
     };
 
     try {
-      const response = await fetch('/api/donor', {
+      const response = await fetch('/api/donors', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

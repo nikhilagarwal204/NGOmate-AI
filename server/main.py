@@ -161,7 +161,7 @@ async def verify_api_key(api_key: str = Header(...)):
 
 
 # API Routes
-@app.post("/onboarding")
+@app.post("/api/onboarding")
 async def onboard_ngo(ngo: NGO):
     # Generate API key
     api_key = await generate_api_key()
@@ -180,7 +180,7 @@ async def onboard_ngo(ngo: NGO):
     }
 
 
-@app.get("/apikeys/{ngo_id}")
+@app.get("/api/apikeys/{ngo_id}")
 async def get_api_keys(ngo_id: str):
     ngo = await db.ngos.find_one({"_id": ngo_id})
     if not ngo:
@@ -192,7 +192,7 @@ async def get_api_keys(ngo_id: str):
     }
 
 
-@app.post("/templates/{ngo_id}")
+@app.post("/api/templates/{ngo_id}")
 async def upload_templates(
     ngo_id: str,
     donor_template: UploadFile = File(...),
@@ -224,7 +224,7 @@ async def upload_templates(
     return {"status": "Templates uploaded successfully"}
 
 
-@app.post("/donor")
+@app.post("/api/donor")
 async def process_donor(
     submission: DonorSubmission, ngo: dict = Depends(verify_api_key)
 ):
@@ -263,7 +263,7 @@ async def process_donor(
     return {"status": "Donor agreement sent successfully", "envelope_id": envelope_id}
 
 
-@app.post("/recipient")
+@app.post("/api/recipient")
 async def process_recipient(
     ngo_id: str = Form(...),
     assistance_request: str = Form(...),
@@ -311,7 +311,7 @@ async def process_recipient(
     }
 
 
-@app.get("/donors/{ngo_id}")
+@app.get("/api/donors/{ngo_id}")
 async def get_donors(ngo_id: str, ngo: dict = Depends(verify_api_key)):
     if ngo_id != str(ngo["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this NGO")
@@ -319,7 +319,7 @@ async def get_donors(ngo_id: str, ngo: dict = Depends(verify_api_key)):
     return {"donors": donors}
 
 
-@app.get("/recipients/{ngo_id}")
+@app.get("/api/recipients/{ngo_id}")
 async def get_recipients(ngo_id: str, ngo: dict = Depends(verify_api_key)):
     if ngo_id != str(ngo["_id"]):
         raise HTTPException(status_code=403, detail="Not authorized for this NGO")

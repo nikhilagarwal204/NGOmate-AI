@@ -6,32 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Search, Plus, Filter } from 'lucide-react';
 
 const DynamicTableComponent = ({ title, endpoint, description }) => {
-//   const [data, setData] = useState([]);
-//   const [fields, setFields] = useState([]);
-//   const [isLoading, setIsLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchData = async () => {
-//       try {
-//         // Fetch fields structure
-//         const fieldsResponse = await fetch(`${endpoint}/fields`);
-//         const fieldsData = await fieldsResponse.json();
-//         setFields(fieldsData);
-
-//         // Fetch table data
-//         const dataResponse = await fetch(endpoint);
-//         const tableData = await dataResponse.json();
-//         setData(tableData);
-//       } catch (error) {
-//         console.error('Error fetching data:', error);
-//       } finally {
-//         setIsLoading(false);
-//       }
-//     };
-
-//     fetchData();
-//   }, [endpoint]);
-
+  
 const sampleFields = [
   { key: 'name', label: 'Recipient Name' },
   { key: 'email', label: 'Email' },
