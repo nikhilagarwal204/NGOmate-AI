@@ -49,10 +49,10 @@ const NGOOnboardingForm = () => {
         <CardHeader className="space-y-1">
           <div className="flex items-center space-x-2">
             <Building2 className="w-6 h-6 text-blue-600" />
-            <CardTitle className="text-2xl font-bold text-blue-900">Welcome to NGOmate</CardTitle>
+            <CardTitle className="text-2xl font-bold text-blue-900">Welcome to NGOmate AI</CardTitle>
           </div>
           <CardDescription>
-           NGOmate is here, to make your life easier. Let's get started by setting up your organization.
+           NGOmate AI is here, to make your life easier. Let's get started by setting up your organization.
           </CardDescription>
         </CardHeader>
         <CardContent>
