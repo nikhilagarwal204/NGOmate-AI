@@ -12,6 +12,8 @@ const DonationForm = () => {
   const router = useRouter();
   const [donationAmount, setDonationAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const [donationPurpose, setDonationPurpose] = useState('general');
+  const [customPurpose, setCustomPurpose] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
@@ -19,12 +21,25 @@ const DonationForm = () => {
     email: '',
     phone: ''
   });
+  const [purposeDetails, setPurposeDetails] = useState({
+    date: '',
+    personName: '',
+  });
 
   const predefinedAmounts = [
     { value: '100', label: '$100' },
     { value: '500', label: '$500' },
     { value: '1000', label: '$1,000' },
     { value: 'custom', label: 'Custom Amount' }
+  ];
+
+  const purposeOptions = [
+    { value: 'general', label: 'General Donation' },
+    { value: 'birthday', label: 'Birthday Celebration' },
+    { value: 'anniversary', label: 'Anniversary' },
+    { value: 'memory', label: 'In Memory Of' },
+    { value: 'honor', label: 'In Honor Of' },
+    { value: 'other', label: 'Other' }
   ];
 
   const handleInputChange = (e) => {
@@ -39,6 +54,23 @@ const DonationForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    // Get custom amount if selected
+    const finalAmount = donationAmount === 'custom' 
+      ? document.querySelector('input[type="number"]').value 
+      : donationAmount;
+
+    // Prepare purpose details
+    const purposeInfo = {
+      type: donationPurpose,
+      details: donationPurpose === 'other' 
+        ? customPurpose 
+        : donationPurpose === 'birthday' || donationPurpose === 'anniversary'
+        ? purposeDetails.date
+        : donationPurpose === 'memory' || donationPurpose === 'honor'
+        ? purposeDetails.personName
+        : null
+    };
+
     try {
       const response = await fetch('/api/donor', {
         method: 'POST',
@@ -47,9 +79,10 @@ const DonationForm = () => {
           'Authorization': 'Bearer abcdefghijk'
         },
         body: JSON.stringify({
-          amount: donationAmount === 'custom' ? document.querySelector('input[type="number"]').value : donationAmount,
+          ...formData,
+          amount: finalAmount,
           paymentMethod,
-          ...formData
+          purpose: purposeInfo
         })
       });
 
@@ -129,6 +162,62 @@ const DonationForm = () => {
                 </div>
               </div>
               
+              {/* Donation Purpose */}
+              <div className="space-y-3">
+                <Label>Donation Purpose</Label>
+                <RadioGroup 
+                  value={donationPurpose} 
+                  onValueChange={setDonationPurpose}
+                  className="grid grid-cols-2 md:grid-cols-3 gap-3"
+                >
+                  {purposeOptions.map((purpose) => (
+                    <div key={purpose.value} className={`flex items-center space-x-2 border rounded-lg p-4 cursor-pointer ${
+                      donationPurpose === purpose.value ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+                    }`}>
+                      <RadioGroupItem value={purpose.value} id={purpose.value} />
+                      <Label htmlFor={purpose.value} className="cursor-pointer">
+                        {purpose.label}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+                
+                {/* Additional fields based on purpose */}
+                {(donationPurpose === 'birthday' || donationPurpose === 'anniversary') && (
+                  <Input 
+                    placeholder="Enter the date"
+                    type="date"
+                    className="mt-2"
+                    value={purposeDetails.date}
+                    onChange={(e) => setPurposeDetails(prev => ({
+                      ...prev,
+                      date: e.target.value
+                    }))}
+                  />
+                )}
+                
+                {(donationPurpose === 'memory' || donationPurpose === 'honor') && (
+                  <Input 
+                    placeholder="Enter the name of the person"
+                    className="mt-2"
+                    value={purposeDetails.personName}
+                    onChange={(e) => setPurposeDetails(prev => ({
+                      ...prev,
+                      personName: e.target.value
+                    }))}
+                  />
+                )}
+                
+                {donationPurpose === 'other' && (
+                  <Input 
+                    placeholder="Please specify the purpose"
+                    value={customPurpose}
+                    onChange={(e) => setCustomPurpose(e.target.value)}
+                    className="mt-2"
+                  />
+                )}
+              </div>
+
               {/* Donation Amount Selection */}
               <div className="space-y-3">
                 <Label>Select Donation Amount</Label>
