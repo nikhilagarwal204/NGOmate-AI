@@ -44,25 +44,25 @@ const DynamicTableComponent = ({ title, endpoint, description }) => {
       name: 'Sarah Wilson',
       email: 'sarah@example.com',
       amount: '$3,000',
-      status: 'Active',
+      status: 'Signed',
     },
     {
       name: 'John Doe',
       email: 'john@example.com',
       amount: '$1,000',
-      status: 'Active',
+      status: 'Not-signed',
     },
     {
       name: 'Jane Smith',
       email: 'jane@example.com',
       amount: '$2,500',
-      status: 'Active',
+      status: 'Expiring Soon',
     },
     {
       name: 'Mike Johnson',
       email: 'mike@example.com',
       amount: '$500',
-      status: 'Inactive',
+      status: 'Signed',
     }
    
   ];
