@@ -75,6 +75,19 @@ const sampleFields = [
   const [fields, setFields] = useState(sampleFields);
   const [isLoading, setIsLoading] = useState(false);
 
+  const getPriorityColorClass = (priority) => {
+    switch (priority.toLowerCase()) {
+      case 'low':
+        return 'bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full';
+      case 'medium':
+        return 'bg-orange-100 text-orange-800 px-2 py-1 rounded-full';
+      case 'high':
+        return 'bg-red-100 text-red-800 px-2 py-1 rounded-full';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -135,7 +148,13 @@ const sampleFields = [
                           key={field.key}
                           className="px-4 py-3 text-sm text-gray-900"
                         >
-                          {row[field.key]}
+                          {field.key === 'priority' ? (
+                            <span className={getPriorityColorClass(row[field.key])}>
+                              {row[field.key]}
+                            </span>
+                          ) : (
+                            row[field.key]
+                          )}
                         </td>
                       ))}
                       <td className="px-4 py-3 text-right">
