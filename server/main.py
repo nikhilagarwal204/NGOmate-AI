@@ -9,6 +9,7 @@ import uvicorn
 from docusign_esign import ApiClient, EnvelopeDefinition, EnvelopesApi
 from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 from google.cloud import storage
+from motor.motor_asyncio import AsyncIOMotorClient
 from openai import OpenAI
 from pydantic import BaseModel
 
@@ -17,7 +18,6 @@ app = FastAPI(title="NGO Platform API")
 # Configuration
 MONGODB_URL = os.getenv("MONGODB_URL")
 GCS_BUCKET = os.getenv("GCS_BUCKET", "ngo-templates")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=OPENAI_API_KEY)
 # DocuSign Configuration
 DOCUSIGN_ACCOUNT_ID = os.getenv("DOCUSIGN_ACCOUNT_ID")
