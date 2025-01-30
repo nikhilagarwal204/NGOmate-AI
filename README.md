@@ -1,5 +1,6 @@
-# NGOMate-AI
-NGOmate AI is inspired by the tireless efforts of NGOs worldwide. By integrating DocuSign, organizations can swiftly process digital agreements and ensure compliance, saving critical time and resources. Meanwhile, AI-driven document analysis prioritizes urgent cases, and automated personalized emails keep donors and recipients engaged with personalized outreach. This blend of eSignature convenience and intelligent processing allows NGOs to focus more on their core mission—helping those in need—and less on administrative overhead.
+<img width="245" alt="NGOmateAI Logo" src="https://github.com/user-attachments/assets/97d797b4-c89b-45be-b2f4-080f7f16844b" />
+
+NGOmate AI is inspired by the tireless efforts of Non-Profit Organizations worldwide. By integrating DocuSign, organizations can swiftly process digital agreements and ensure compliance, saving critical time and resources. Meanwhile, AI-driven document analysis prioritizes urgent cases, and automated personalized emails keep donors and recipients engaged with customized outreach. This blend of eSignature convenience and intelligent processing allows Non-Profits to focus more on their core mission—helping those in need—and less on administrative overhead.
 
 ## Technologies Used
 - **FastAPI** (Python) for backend APIs
@@ -7,7 +8,7 @@ NGOmate AI is inspired by the tireless efforts of NGOs worldwide. By integrating
 - **Motor** for MongoDB integration
 - **DocuSign eSign** for digital signatures
 - **Google Cloud Storage** for template management
-- **OpenAI** for AI-based document processing/ personalised emails
+- **OpenAI** for AI-based document processing/personalized emails
 
 ## Setup
 1. Clone the repo.  
@@ -41,4 +42,4 @@ Used for NGO onboarding, key management, template uploads, donation, and assista
 
 ## DocuSign Integration
 - The server uses DocuSign for digital signature flows (`send_envelope_for_signature`) that email signers with info from custom fields.
-- This is crucial for verifying NGO documents and ensuring compliance in a fast, secure manner.
+- This is crucial for verifying NGO documents and ensuring compliance quickly and securely.
